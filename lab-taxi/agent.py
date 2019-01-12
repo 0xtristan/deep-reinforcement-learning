@@ -1,8 +1,8 @@
 import numpy as np
 from collections import defaultdict
 
-# Attempting to implement Q-learning for our agent
-# This is an offline learning task? Env is static and batched
+# Implemenion of Q-learning/sarsamax for our taxi agent
+# Using an epsilon-greedy policy with epsilon decay and discounted rewards
 # 9.35 is the best result I can get
 
 class Agent:
