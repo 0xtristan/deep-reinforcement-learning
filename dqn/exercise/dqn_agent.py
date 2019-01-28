@@ -63,9 +63,13 @@ class Agent():
             state (array_like): current state
             eps (float): epsilon, for epsilon-greedy action selection
         """
+        # from_numpy creates tensor without copying numpy array data
+        # float == to(float), to() can be used for dtype and device conversions
         state = torch.from_numpy(state).float().unsqueeze(0).to(device)
+        # eval mode as opposed to training (ignores dropout, batchnorm)
         self.qnetwork_local.eval()
         with torch.no_grad():
+            # call the nn.Module rather than explicitly using nn.Module.forward()
             action_values = self.qnetwork_local(state)
         self.qnetwork_local.train()
 
@@ -87,6 +91,20 @@ class Agent():
 
         ## TODO: compute and minimize the loss
         "*** YOUR CODE HERE ***"
+        # Max q value over all next actions given their next states (this is for a whole batch)
+        # i.e. max_a(Q(s_{j+1}, a, w-)) from the one step look ahead
+        Q_targets_next = self.qnetwork_local(next_states).detach().max(1)[0].unsqueeze(1)
+        # Compute Q targets for current states
+        Q_targets = rewards + gamma * Q_targets_next * (1 - dones) # set y_i = r if done
+        # Get expected Q values from local model - used in gradient update as diff from target
+        Q_expected = self.qnetwork_local(states).gather(1, actions)
+        
+        # Compute Loss
+        loss = F.mse_loss(Q_expected, Q_targets)
+        # Minimise loss by backprop
+        self.optimizer.zero_grad()
+        loss.backward()
+        self.optimizer.step()
 
         # ------------------- update target network ------------------- #
         self.soft_update(self.qnetwork_local, self.qnetwork_target, TAU)                     
